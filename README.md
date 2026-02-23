@@ -1,504 +1,348 @@
-# 🔤 NLP Projects - Multi-Technique Text Processing
+# 📚 NLP Projects - Natural Language Processing
 
-A **comprehensive NLP portfolio** demonstrating classic and modern text processing techniques including sentiment analysis, text classification, word embeddings, and transformer-based models for various natural language understanding tasks.
+A **comprehensive guide to NLP techniques** including text preprocessing, sentiment analysis, topic modeling, named entity recognition, and transformer models.
 
 ## 🎯 Overview
 
-This project showcases:
-- ✅ Sentiment analysis (positive, negative, neutral)
-- ✅ Text classification (spam, reviews, categories)
-- ✅ Word embeddings (Word2Vec, GloVe, FastText)
-- ✅ Named entity recognition (NER)
-- ✅ Transformer models (BERT, DistilBERT)
-- ✅ Text preprocessing pipelines
-- ✅ Language models and chatbots
+This project covers:
+- ✅ Text preprocessing & tokenization
+- ✅ Word embeddings (Word2Vec, GloVe)
+- ✅ Sentiment analysis
+- ✅ Named Entity Recognition (NER)
+- ✅ Topic modeling (LDA)
+- ✅ Text classification
+- ✅ Transformer models (BERT, GPT)
 
-## 🏗️ Architecture
-
-### NLP Processing Pipeline
-```
-Raw Text → Preprocessing → Feature Extraction → Model → Output
-            ├─ Tokenization      ├─ TF-IDF         ├─ Classifier
-            ├─ Lowercasing       ├─ Word Embeddings├─ Sentiment
-            ├─ Stop word removal ├─ Transformers   ├─ NER
-            └─ Lemmatization     └─ Contextual     └─ Generation
-```
-
-### Tech Stack
-| Component | Technology |
-|-----------|-----------|
-| **Core NLP** | NLTK, spaCy, TextBlob |
-| **Deep Learning** | TensorFlow, PyTorch |
-| **Embeddings** | Word2Vec, GloVe, FastText |
-| **Transformers** | Hugging Face, BERT |
-| **Tools** | VADER, Pattern, Gensim |
-
-## 🧹 Text Preprocessing
-
-### Complete Pipeline
+## 🔤 Text Preprocessing
 
 ```python
 import nltk
-from nltk.tokenize import word_tokenize
+from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
+from nltk.stem import PorterStemmer, WordNetLemmatizer
 import re
-
-# Download required resources
-nltk.download('punkt')  # Tokenizer
-nltk.download('stopwords')  # Stop words
-nltk.download('wordnet')  # Lemmatizer
-nltk.download('averaged_perceptron_tagger')  # POS tagger
+import string
 
 class TextPreprocessor:
-    def __init__(self):
-        self.lemmatizer = WordNetLemmatizer()
-        self.stop_words = set(stopwords.words('english'))
+    """Clean and prepare text"""
     
-    def preprocess(self, text):
-        """Complete preprocessing pipeline"""
+    def __init__(self):
+        self.stop_words = set(stopwords.words('english'))
+        self.stemmer = PorterStemmer()
+        self.lemmatizer = WordNetLemmatizer()
         
-        # Step 1: Lowercase
+        # Download required NLTK data
+        nltk.download('punkt')
+        nltk.download('stopwords')
+    
+    def clean_text(self, text):
+        """Basic text cleaning"""
+        # Lowercase
         text = text.lower()
         
-        # Step 2: Remove URLs
-        text = re.sub(r'http\S+|www\S+', '', text)
+        # Remove URLs
+        text = re.sub(r'http\S+|www\S+|https\S+', '', text, flags=re.MULTILINE)
         
-        # Step 3: Remove special characters (keep alphanumeric & spaces)
-        text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+        # Remove email
+        text = re.sub(r'\S+@\S+', '', text)
         
-        # Step 4: Tokenize
+        # Remove special characters
+        text = re.sub(r'[^a-zA-Z\s]', '', text)
+        
+        return text
+    
+    def tokenize(self, text):
+        """Split into tokens"""
         tokens = word_tokenize(text)
-        
-        # Step 5: Remove stop words
-        tokens = [t for t in tokens if t not in self.stop_words]
-        
-        # Step 6: Lemmatization
-        tokens = [self.lemmatizer.lemmatize(t) for t in tokens]
-        
-        # Step 7: Remove short tokens
-        tokens = [t for t in tokens if len(t) > 2]
-        
         return tokens
-
-# Example
-preprocessor = TextPreprocessor()
-raw_text = "I really loved this amazing product! 😊 Check it out: https://example.com"
-cleaned = preprocessor.preprocess(raw_text)
-print(cleaned)  # ['really', 'loved', 'amazing', 'product']
+    
+    def remove_stopwords(self, tokens):
+        """Remove common words"""
+        filtered = [token for token in tokens if token not in self.stop_words]
+        return filtered
+    
+    def stem(self, tokens):
+        """Reduce to stem"""
+        stemmed = [self.stemmer.stem(token) for token in tokens]
+        return stemmed
+    
+    def lemmatize(self, tokens):
+        """Reduce to lemma"""
+        lemmatized = [self.lemmatizer.lemmatize(token) for token in tokens]
+        return lemmatized
+    
+    def preprocess_pipeline(self, text):
+        """Full preprocessing"""
+        text = self.clean_text(text)
+        tokens = self.tokenize(text)
+        tokens = self.remove_stopwords(tokens)
+        tokens = self.lemmatize(tokens)
+        return tokens
 ```
 
-## 😊 Sentiment Analysis
-
-### VADER (Valence Aware Dictionary + Sentiment Reasoner)
+## 💭 Sentiment Analysis
 
 ```python
-from nltk.sentiment import SentimentIntensityAnalyzer
-
-# VADER: Excellent for social media and informal text
-sia = SentimentIntensityAnalyzer()
-
-# Examples
-texts = [
-    "This product is absolutely amazing! 😍",
-    "Worst experience ever!!! 😠",
-    "It's okay, nothing special.",
-    "Not good, but not terrible either."
-]
-
-for text in texts:
-    scores = sia.polarity_scores(text)
-    
-    print(f"\nText: {text}")
-    print(f"Compound Score: {scores['compound']:.3f}")  # -1 to 1
-    print(f"Positive: {scores['pos']:.3f}")
-    print(f"Negative: {scores['neg']:.3f}")
-    print(f"Neutral: {scores['neu']:.3f}")
-    
-    # Classification
-    if scores['compound'] >= 0.05:
-        sentiment = "POSITIVE ✓"
-    elif scores['compound'] <= -0.05:
-        sentiment = "NEGATIVE ✗"
-    else:
-        sentiment = "NEUTRAL"
-    print(f"Sentiment: {sentiment}")
-
-# Output example:
-# Text: This product is absolutely amazing! 😍
-# Compound Score: 0.897
-# Positive: 0.436
-# Negative: 0.000
-# Neutral: 0.564
-# Sentiment: POSITIVE ✓
-```
-
-### Deep Learning Sentiment (BERT-based)
-
-```python
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import TfidfVectorizer
+from textblob import TextBlob
 from transformers import pipeline
 
-# Load pretrained sentiment classifier
-classifier = pipeline('sentiment-analysis', 
-                     model='distilbert-base-uncased-finetuned-sst-2-english')
-
-texts = [
-    "This movie is fantastic! Best film of the year.",
-    "Absolutely terrible, waste of money.",
-    "It was okay, nothing special."
-]
-
-for text in texts:
-    result = classifier(text)
-    print(f"\nText: {text}")
-    print(f"Label: {result[0]['label']}")  # POSITIVE or NEGATIVE
-    print(f"Score: {result[0]['score']:.3f}")  # Confidence 0-1
-```
-
-## 🏷️ Text Classification
-
-### TF-IDF + Logistic Regression (Spam Detection)
-
-```python
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
-
-# Dataset: Email spam vs ham
-emails = [
-    ("Congratulations! You've won a prize!", True),  # Spam
-    ("Your flight confirmation is attached", False),  # Ham
-    ("Click here for FREE money!!!", True),  # Spam
-    ("Meeting at 3pm in conference room", False),  # Ham
-    # ... more examples
-]
-
-X = [text for text, _ in emails]
-y = [label for _, label in emails]
-
-# Convert text to TF-IDF vectors
-vectorizer = TfidfVectorizer(max_features=1000, lowercase=True)
-X_tfidf = vectorizer.fit_transform(X)
-
-# Split data
-X_train, X_test, y_train, y_test = train_test_split(
-    X_tfidf, y, test_size=0.2, random_state=42
-)
-
-# Train classifier
-classifier = LogisticRegression(max_iter=1000)
-classifier.fit(X_train, y_train)
-
-# Evaluate
-y_pred = classifier.predict(X_test)
-print(classification_report(y_test, y_pred, 
-                           target_names=['Ham', 'Spam']))
-
-# Prediction on new text
-new_email = "Limited offer! Buy now and get 50% off!"
-new_tfidf = vectorizer.transform([new_email])
-prob = classifier.predict_proba(new_tfidf)[0]
-print(f"Spam probability: {prob[1]:.1%}")
-```
-
-### CNN for Text Classification
-
-```python
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, Conv1D, MaxPool1D, Flatten, Dense
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-
-# Prepare data
-texts = ["great movie", "terrible film", "amazing show", "awful"]
-labels = [1, 0, 1, 0]  # Positive/Negative
-
-# Tokenize
-tokenizer = Tokenizer(num_words=1000)
-tokenizer.fit_on_texts(texts)
-sequences = tokenizer.texts_to_sequences(texts)
-padded = pad_sequences(sequences, maxlen=10, padding='post')
-
-# CNN for text
-model = Sequential([
-    # Embedding: Convert integers to word vectors
-    Embedding(input_dim=1000, output_dim=128, input_length=10),
+class SentimentAnalyzer:
+    """Analyze sentiment"""
     
-    # Convolutional filters of size 3, 4, 5
-    Conv1D(filters=64, kernel_size=3, activation='relu'),
-    MaxPool1D(pool_size=2),
+    @staticmethod
+    def textblob_sentiment(text):
+        """Simple sentiment using TextBlob"""
+        analysis = TextBlob(text)
+        polarity = analysis.sentiment.polarity  # -1 to 1
+        subjectivity = analysis.sentiment.subjectivity  # 0 to 1
+        
+        if polarity > 0.1:
+            sentiment = 'positive'
+        elif polarity < -0.1:
+            sentiment = 'negative'
+        else:
+            sentiment = 'neutral'
+        
+        return {
+            'sentiment': sentiment,
+            'polarity': polarity,
+            'subjectivity': subjectivity
+        }
     
-    # Dense layers
-    Flatten(),
-    Dense(32, activation='relu'),
-    Dense(1, activation='sigmoid')  # Binary classification
-])
-
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-model.fit(padded, labels, epochs=10)
-
-# Prediction
-test_seq = tokenizer.texts_to_sequences(["very good"])
-test_padded = pad_sequences(test_seq, maxlen=10, padding='post')
-pred = model.predict(test_padded)
-print(f"Review is positive: {pred[0][0]:.1%}")
+    @staticmethod
+    def transformer_sentiment(text):
+        """Use BERT for sentiment"""
+        classifier = pipeline('sentiment-analysis', 
+                            model='distilbert-base-uncased-finetuned-sst-2-english')
+        
+        result = classifier(text)
+        return result[0]  # {'label': 'POSITIVE/NEGATIVE', 'score': probability}
+    
+    @staticmethod
+    def train_classifier(texts, labels):
+        """Train custom classifier"""
+        vectorizer = TfidfVectorizer(max_features=5000)
+        X = vectorizer.fit_transform(texts)
+        
+        clf = MultinomialNB()
+        clf.fit(X, labels)
+        
+        return {
+            'vectorizer': vectorizer,
+            'classifier': clf
+        }
 ```
 
-## 📚 Word Embeddings
-
-### Word2Vec (Skip-gram model)
+## 🏷️ Named Entity Recognition
 
 ```python
-from gensim.models import Word2Vec
+from transformers import AutoTokenizer, AutoModelForTokenClassification
+from transformers import pipeline as hf_pipeline
+import spacy
 
-# Training corpus
-corpus = [
-    "Machine learning is powerful",
-    "Deep learning requires data",
-    "Neural networks learn patterns",
-    "Data science uses statistics"
-]
-
-sentences = [text.split() for text in corpus]
-
-# Train Word2Vec
-model = Word2Vec(
-    sentences=sentences,
-    vector_size=100,      # Dimension of vectors
-    window=3,             # Context window
-    min_count=1,          # Minimum word frequency
-    workers=4             # Parallel processing
-)
-
-# Access word vectors
-print(model.wv['machine'])  # 100-D vector for "machine"
-
-# Similarity between words
-similarity = model.wv.similarity('learning', 'neural')
-print(f"Similarity(learning, neural): {similarity:.3f}")
-
-# Find most similar words
-similar = model.wv.most_similar('data', topn=3)
-print(f"Most similar to 'data':")
-for word, score in similar:
-    print(f"  {word}: {score:.3f}")
-
-# Vector arithmetic (King - Man + Woman = Queen)
-result = model.wv.most_similar(
-    positive=['king', 'woman'],
-    negative=['man'],
-    topn=1
-)
-print(f"King - Man + Woman ≈ {result[0][0]}")  # Queen
+class EntityRecognizer:
+    """Extract named entities"""
+    
+    @staticmethod
+    def spacy_ner(text):
+        """Using spaCy"""
+        nlp = spacy.load('en_core_web_sm')
+        doc = nlp(text)
+        
+        entities = []
+        for ent in doc.ents:
+            entities.append({
+                'text': ent.text,
+                'label': ent.label_,
+                'start': ent.start_char,
+                'end': ent.end_char
+            })
+        
+        return entities
+    
+    @staticmethod
+    def bert_ner(text):
+        """Using BERT for NER"""
+        nlp = hf_pipeline('ner', model='dslim/bert-base-uncased-finetuned-ner')
+        
+        results = nlp(text)
+        return results
+    
+    @staticmethod
+    def extract_entities(doc, entity_types=['PERSON', 'ORG', 'GPE']):
+        """Filter entity types"""
+        filtered = [
+            {
+                'text': ent.text,
+                'label': ent.label_
+            }
+            for ent in doc.ents if ent.label_ in entity_types
+        ]
+        return filtered
 ```
 
-### GloVe Vectors
+## 🎯 Topic Modeling
 
 ```python
-import numpy as np
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
 
-# Load pretrained GloVe vectors
-glove_vectors = {}
-with open('glove.6B.100d.txt', 'r', encoding='utf8') as f:
-    for line in f:
-        word, vector = line.split(maxsplit=1)
-        glove_vectors[word] = np.array(list(map(float, vector.split())))
-
-# Use vectors
-machine_vec = glove_vectors['machine']
-print(f"'machine' vector shape: {machine_vec.shape}")
-
-# Compute cosine similarity
-def cosine_similarity(v1, v2):
-    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
-
-sim = cosine_similarity(
-    glove_vectors['learning'],
-    glove_vectors['training']
-)
-print(f"Cosine similarity(learning, training): {sim:.3f}")
-```
-
-## 🤖 Advanced: Transformer Models
-
-### BERT for Classification
-
-```python
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-
-class BERTClassifier:
-    def __init__(self, model_name='distilbert-base-uncased'):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForSequenceClassification.from_pretrained(
-            model_name,
-            num_labels=2
+class TopicModeler:
+    """Extract topics from documents"""
+    
+    @staticmethod
+    def lda_topics(documents, n_topics=5, n_words=10):
+        """Latent Dirichlet Allocation"""
+        # Vectorize
+        vectorizer = CountVectorizer(
+            max_df=0.95,
+            min_df=2,
+            max_features=1000,
+            stop_words='english'
         )
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model.to(self.device)
-    
-    def classify(self, text):
-        """Classify text using BERT"""
         
-        # Tokenize
-        inputs = self.tokenizer(
-            text,
-            return_tensors='pt',
-            truncation=True,
-            max_length=512,
-            padding=True
-        ).to(self.device)
+        doc_term_matrix = vectorizer.fit_transform(documents)
         
-        # Forward pass
-        with torch.no_grad():
-            outputs = self.model(**inputs)
-            logits = outputs.logits
+        # LDA
+        lda = LatentDirichletAllocation(
+            n_components=n_topics,
+            random_state=42,
+            max_iter=10
+        )
         
-        # Get prediction
-        probabilities = torch.softmax(logits, dim=1)
-        class_idx = torch.argmax(probabilities, dim=1).item()
-        confidence = probabilities[0][class_idx].item()
+        lda.fit(doc_term_matrix)
         
-        return class_idx, confidence
-
-# Usage
-classifier = BERTClassifier()
-text = "This product quality is excellent!"
-prediction, confidence = classifier.classify(text)
-print(f"Classification: {prediction}")  # 0 or 1
-print(f"Confidence: {confidence:.1%}")
+        # Extract topics
+        feature_names = vectorizer.get_feature_names_out()
+        
+        topics = []
+        for topic_idx, topic in enumerate(lda.components_):
+            top_indices = topic.argsort()[-n_words:][::-1]
+            top_words = [feature_names[i] for i in top_indices]
+            topics.append({
+                'topic': topic_idx,
+                'words': top_words,
+                'weights': topic[top_indices]
+            })
+        
+        return topics, lda, vectorizer
 ```
 
-### Named Entity Recognition (NER)
+## 📊 Text Classification
 
 ```python
-import spaCy
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import LinearSVC
 
-# Load English model
-nlp = spacy.load('en_core_web_sm')
-
-# Process text
-text = "Apple Inc. was founded by Steve Jobs in Cupertino."
-doc = nlp(text)
-
-# Extract entities
-print("Entities:")
-for ent in doc.ents:
-    print(f"  {ent.text:20} → {ent.label_}")
-
-# Output:
-# Entities:
-#   Apple Inc.           → ORG (Organization)
-#   Steve Jobs           → PERSON
-#   Cupertino            → GPE (Geopolitical entity)
+class TextClassifier:
+    """Classify text"""
+    
+    @staticmethod
+    def create_pipeline(classifier_type='nb'):
+        """Create classification pipeline"""
+        if classifier_type == 'nb':
+            clf = MultinomialNB()
+        elif classifier_type == 'svm':
+            clf = LinearSVC(random_state=42, max_iter=1000)
+        
+        pipeline = Pipeline([
+            ('tfidf', TfidfVectorizer(max_features=5000)),
+            ('clf', clf)
+        ])
+        
+        return pipeline
+    
+    @staticmethod
+    def train_and_evaluate(X_train, y_train, X_test, y_test):
+        """Train and test"""
+        pipeline = TextClassifier.create_pipeline('svm')
+        pipeline.fit(X_train, y_train)
+        
+        train_score = pipeline.score(X_train, y_train)
+        test_score = pipeline.score(X_test, y_test)
+        
+        return {
+            'train_accuracy': train_score,
+            'test_accuracy': test_score,
+            'model': pipeline
+        }
 ```
 
-## 🚀 Production Pipeline
-
-### Complete Text Processing Service
+## 🤖 Transformer Models
 
 ```python
-from flask import Flask, request, jsonify
-import pickle
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
 
-app = Flask(__name__)
-
-# Load trained models
-with open('sentiment_model.pkl', 'rb') as f:
-    sentiment_model = pickle.load(f)
-
-with open('vectorizer.pkl', 'rb') as f:
-    vectorizer = pickle.load(f)
-
-@app.route('/analyze', methods=['POST'])
-def analyze_text():
-    """Comprehensive text analysis endpoint"""
-    data = request.json
-    text = data.get('text', '')
+class TransformerNLP:
+    """Use transformer models"""
     
-    if not text:
-        return jsonify({'error': 'No text provided'}), 400
+    @staticmethod
+    def text_generation():
+        """Generate text"""
+        from transformers import pipeline
+        
+        generator = pipeline('text-generation', model='gpt2')
+        texts = generator("Machine learning is", max_length=50, num_return_sequences=3)
+        
+        return texts
     
-    # Preprocessing
-    preprocessor = TextPreprocessor()
-    tokens = preprocessor.preprocess(text)
+    @staticmethod
+    def question_answering(context, question):
+        """Extract answers from context"""
+        from transformers import pipeline
+        
+        qa = pipeline('question-answering', model='bert-base-uncased')
+        
+        answer = qa(question=question, context=context)
+        return answer
     
-    # Sentiment
-    sia = SentimentIntensityAnalyzer()
-    sentiment = sia.polarity_scores(text)
-    
-    # Classification
-    text_vec = vectorizer.transform([text])
-    prediction = sentiment_model.predict(text_vec)
-    
-    # NER
-    doc = nlp(text)
-    entities = [(ent.text, ent.label_) for ent in doc.ents]
-    
-    return jsonify({
-        'tokens': tokens,
-        'sentiment': {
-            'compound': sentiment['compound'],
-            'label': 'POSITIVE' if sentiment['compound'] > 0 else 'NEGATIVE'
-        },
-        'classification': int(prediction[0]),
-        'entities': entities
-    })
-
-if __name__ == '__main__':
-    app.run(port=5000)
+    @staticmethod
+    def summarization(text):
+        """Summarize text"""
+        from transformers import pipeline
+        
+        summarizer = pipeline('summarization', model='facebook/bart-large-cnn')
+        summary = summarizer(text, max_length=100, min_length=50)
+        
+        return summary
 ```
 
-## 💡 Interview Questions
+## 💡 Interview Talking Points
 
-### Q: TF-IDF vs Word Embeddings?
+**Q: Difference between stemming and lemmatization?**
 ```
-TF-IDF:
-- Bag-of-words approach (word order ignored)
-- Good for sparse, traditional ML
-- Interpretable (feature importance visible)
-
-Embeddings:
-- Dense representations
-- Capture semantic meaning
-- Good for neural networks
-- Context-aware (same word, different contexts)
-
-Choice:
-- TF-IDF + Logistic: Fast, simple baselines
-- Embeddings + Deep: Complex patterns, better accuracy
+Answer:
+- Stemming: Crude removal of suffixes (run, running → runn)
+- Lemmatization: Dictionary-based reduction (better, good → good)
+- Stemming faster but less accurate
+- Lemmatization more accurate but slower
 ```
 
-### Q: How to handle imbalanced text data?
+**Q: Word embeddings vs TF-IDF?**
 ```
-Solutions:
-1. Class weighting: Give more importance to minority class
-2. Oversampling: Duplicate minority examples
-3. Undersampling: Reduce majority class
-4. SMOTE: Generate synthetic examples
-5. Focal loss: Penalize easy-to-classify examples more
+Answer:
+- TF-IDF: Frequency-based, sparse, interpretable
+- Word2Vec: Dense vectors, semantic meaning
+- TF-IDF: Good for traditional ML
+- Embeddings: Required for deep learning
 ```
 
 ## 🌟 Portfolio Value
 
-✅ Classic ML + deep learning
-✅ Multiple preprocessing techniques
-✅ State-of-the-art transformers
-✅ Production-grade architecture
-✅ Diverse NLP tasks
-✅ Real-world applications
-✅ Solid fundamentals
-
-## 📄 License
-
-MIT License - Educational Use
+✅ Text preprocessing
+✅ Sentiment analysis
+✅ NER (Named Entity Recognition)
+✅ Topic modeling
+✅ Text classification
+✅ Transformer models
+✅ NLP applications
 
 ---
 
-**Development Ideas**:
-1. Add chatbot with context persistence
-2. Implement question-answering system
-3. Machine translation (sequence-to-sequence)
-4. Text summarization
-5. Custom domain adaptation
+**Technologies**: NLTK, spaCy, Scikit-learn, Transformers, PyTorch
+
